@@ -22,6 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @WireMockTest(httpPort = 8089)
 class IntegrationTests {
 
+    private static final String TEST_USERNAME = "octocat";
+    private static final String INVALID_TEST_USERNAME = "invalid_test_username";
+
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -127,21 +130,52 @@ class IntegrationTests {
 //
     @Test
     void endpoint_should_return_provided_username() {
-        var testUsername = "test_username";
+
+
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "git-consortium",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    },
+                                    {
+                                        "name": "boysenberry-repo-1",
+                                        "fork": true,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    },
+                                    {
+                                        "name": "Hello-World",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+
         ResponseEntity<String> response = restTemplate.getForEntity(
                 "/repos/{username}",
                 String.class,
-                testUsername);
+                TEST_USERNAME);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(testUsername);
+        assertThat(response.getBody()).isEqualTo(TEST_USERNAME);
     }
 
     @Test
     void endpoint_should_return_404_for_invalid_username() {
-        var invalidTestUsername = "invalid_test_username";
 
-        stubFor(get(urlEqualTo("/users/" + invalidTestUsername + "/repos"))
+        stubFor(get(urlEqualTo("/users/" + INVALID_TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
                         .withStatus(404)
                         .withHeader("Content-Type", "application/json")
@@ -157,7 +191,7 @@ class IntegrationTests {
         ResponseEntity<String> response = restTemplate.getForEntity(
                 "/repos/{username}",
                 String.class,
-                invalidTestUsername);
+                INVALID_TEST_USERNAME);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).contains("\"status\":404");
