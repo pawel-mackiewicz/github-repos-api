@@ -172,7 +172,7 @@ class IntegrationTests {
         assertThat(response.getBody()).contains(TEST_USERNAME);
         assertThat(response.getBody()).contains("Hello-World");
         assertThat(response.getBody()).contains("git-consortium");
-//        assertThat(response.getBody()).doesNotContain("boysenberry-repo-1");
+        assertThat(response.getBody()).doesNotContain("boysenberry-repo-1");
     }
 
     @Test

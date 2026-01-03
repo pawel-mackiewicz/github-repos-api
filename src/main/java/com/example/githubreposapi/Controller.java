@@ -22,7 +22,12 @@ public class Controller {
     @GetMapping("/{username}")
     public ResponseEntity<List<GitHubRepository>> getEndpoint(@PathVariable String username) {
         var ghRepos = client.getRepositoriesForUser(username);
-        return ResponseEntity.ok(ghRepos);
+        assert ghRepos != null;
+        var filteredGHRepos = ghRepos
+                .stream()
+                .filter(repo -> !repo.fork())
+                .toList();
+        return ResponseEntity.ok(filteredGHRepos);
     }
 
 
