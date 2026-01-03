@@ -129,7 +129,7 @@ class IntegrationTests {
 //    }
 //
     @Test
-    void endpoint_should_return_provided_username() {
+    void endpoint_should_return_provided_username_and_not_forked_repositories() {
 
 
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
@@ -169,7 +169,10 @@ class IntegrationTests {
                 TEST_USERNAME);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(TEST_USERNAME);
+        assertThat(response.getBody()).contains(TEST_USERNAME);
+        assertThat(response.getBody()).contains("Hello-World");
+        assertThat(response.getBody()).contains("git-consortium");
+//        assertThat(response.getBody()).doesNotContain("boysenberry-repo-1");
     }
 
     @Test
