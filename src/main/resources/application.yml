@@ -1,3 +1,7 @@
 spring:
   application:
     name: github-repos-api
+
+github:
+  api:
+    url: 'https://api.github.com'
