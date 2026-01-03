@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedList;
 import java.util.List;
 
 
@@ -20,14 +21,31 @@ public class Controller {
     private final GitHubClient client;
 
     @GetMapping("/{username}")
-    public ResponseEntity<List<GitHubRepository>> getEndpoint(@PathVariable String username) {
+    public ResponseEntity<List<Repository>> getEndpoint(@PathVariable String username) {
         var ghRepos = client.getRepositoriesForUser(username);
         assert ghRepos != null;
         var filteredGHRepos = ghRepos
                 .stream()
                 .filter(repo -> !repo.fork())
                 .toList();
-        return ResponseEntity.ok(filteredGHRepos);
+
+        List<Repository> res = new LinkedList<>();
+        for (GitHubRepository ghRepo : filteredGHRepos) {
+            var name = ghRepo.name();
+            var login = ghRepo.owner().login();
+            List<GitHubBranch> ghBranches = client.getBranchesForRepo(ghRepo);
+            List<Branch> branches = new LinkedList<>();
+            for (GitHubBranch ghBranch : ghBranches) {
+                var branchName = ghBranch.name();
+                var sha = ghBranch.commit().sha();
+                branches.add(new Branch(branchName,sha));
+            }
+            var repo = new Repository(name, login, branches);
+            res.add(repo);
+        }
+
+        log.info(new tools.jackson.databind.ObjectMapper().writeValueAsString(res));
+        return ResponseEntity.ok(res);
     }
 
 

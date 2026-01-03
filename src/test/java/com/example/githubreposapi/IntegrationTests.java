@@ -32,105 +32,9 @@ class IntegrationTests {
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("github.api.url", () -> "http://localhost:8089");
     }
-//
-//    @Test
-//    void shouldReturnUserRepositoriesWithoutForks() {
-//        // Given
-//        String username = "octocat";
-//
-//        stubFor(get(urlEqualTo("/users/" + username + "/repos"))
-//                .willReturn(aResponse()
-//                        .withStatus(200)
-//                        .withHeader("Content-Type", "application/json")
-//                        .withBody("""
-//                                [
-//                                    {
-//                                        "name": "git-consortium",
-//                                        "fork": false,
-//                                        "owner": {
-//                                            "login": "octocat"
-//                                        }
-//                                    },
-//                                    {
-//                                        "name": "boysenberry-repo-1",
-//                                        "fork": true,
-//                                        "owner": {
-//                                            "login": "octocat"
-//                                        }
-//                                    },
-//                                    {
-//                                        "name": "Hello-World",
-//                                        "fork": false,
-//                                        "owner": {
-//                                            "login": "octocat"
-//                                        }
-//                                    }
-//                                ]
-//                                """)));
-//
-//        stubFor(get(urlEqualTo("/repos/octocat/git-consortium/branches"))
-//                .willReturn(aResponse()
-//                        .withStatus(200)
-//                        .withHeader("Content-Type", "application/json")
-//                        .withBody("""
-//                                [
-//                                    {
-//                                        "name": "master",
-//                                        "commit": {
-//                                            "sha": "abc123def456"
-//                                        }
-//                                    },
-//                                    {
-//                                        "name": "develop",
-//                                        "commit": {
-//                                            "sha": "xyz789uvw012"
-//                                        }
-//                                    }
-//                                ]
-//                                """)));
-//
-//        stubFor(get(urlEqualTo("/repos/octocat/Hello-World/branches"))
-//                .willReturn(aResponse()
-//                        .withStatus(200)
-//                        .withHeader("Content-Type", "application/json")
-//                        .withBody("""
-//                                [
-//                                    {
-//                                        "name": "main",
-//                                        "commit": {
-//                                            "sha": "main123commit"
-//                                        }
-//                                    }
-//                                ]
-//                                """)));
-//
-//        // When
-//        ResponseEntity<String> response = restTemplate.getForEntity(
-//                "/repos/{username}",
-//                String.class,
-//                username);
-//
-//        // Then
-//        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-//        assertThat(response.getBody())
-//                .contains("\"repositoryName\":\"git-consortium\"")
-//                .contains("\"ownerLogin\":\"octocat\"")
-//                .contains("\"name\":\"master\"")
-//                .contains("\"lastCommitSha\":\"abc123def456\"")
-//                .contains("\"name\":\"develop\"")
-//                .contains("\"lastCommitSha\":\"xyz789uvw012\"")
-//                .contains("\"repositoryName\":\"Hello-World\"")
-//                .contains("\"name\":\"main\"")
-//                .contains("\"lastCommitSha\":\"main123commit\"")
-//                .doesNotContain("boysenberry-repo-1");
-//
-//        // Verify that fork repository was NOT requested
-//        verify(0, getRequestedFor(urlEqualTo("/repos/octocat/boysenberry-repo-1/branches")));
-//    }
-//
-    @Test
-    void endpoint_should_return_provided_username_and_not_forked_repositories() {
 
+    @Test
+    void shouldReturnUserRepositoriesWithoutForks() {
 
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
@@ -162,17 +66,64 @@ class IntegrationTests {
                                 ]
                                 """)));
 
+        stubFor(get(urlEqualTo("/repos/octocat/git-consortium/branches"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "master",
+                                        "commit": {
+                                            "sha": "abc123def456"
+                                        }
+                                    },
+                                    {
+                                        "name": "develop",
+                                        "commit": {
+                                            "sha": "xyz789uvw012"
+                                        }
+                                    }
+                                ]
+                                """)));
 
+        stubFor(get(urlEqualTo("/repos/octocat/Hello-World/branches"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "main",
+                                        "commit": {
+                                            "sha": "main123commit"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        // When
         ResponseEntity<String> response = restTemplate.getForEntity(
                 "/repos/{username}",
                 String.class,
                 TEST_USERNAME);
 
+        // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains(TEST_USERNAME);
-        assertThat(response.getBody()).contains("Hello-World");
-        assertThat(response.getBody()).contains("git-consortium");
-        assertThat(response.getBody()).doesNotContain("boysenberry-repo-1");
+        assertThat(response.getBody())
+                .contains("\"repositoryName\":\"git-consortium\"")
+                .contains("\"ownerLogin\":\"octocat\"")
+                .contains("\"name\":\"master\"")
+                .contains("\"lastCommitSha\":\"abc123def456\"")
+                .contains("\"name\":\"develop\"")
+                .contains("\"lastCommitSha\":\"xyz789uvw012\"")
+                .contains("\"repositoryName\":\"Hello-World\"")
+                .contains("\"name\":\"main\"")
+                .contains("\"lastCommitSha\":\"main123commit\"")
+                .doesNotContain("boysenberry-repo-1");
+
+        // Verify that fork repository was NOT requested
+        verify(0, getRequestedFor(urlEqualTo("/repos/octocat/boysenberry-repo-1/branches")));
     }
 
     @Test

@@ -28,4 +28,18 @@ public class GitHubClient {
                 .retrieve()
                 .body(GitHubRepository[].class);
     }
+
+    public List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
+        GitHubBranch[] branches = fetchBranchesForRepo(repo);
+
+        assert branches != null;
+        return List.of(branches);
+    }
+
+    private GitHubBranch[] fetchBranchesForRepo(GitHubRepository repo) {
+        return gitHubClient.get()
+                .uri("/repos/{owner}/{repo}/branches", repo.owner().login(), repo.name())
+                .retrieve()
+                .body(GitHubBranch[].class);
+    }
 }
