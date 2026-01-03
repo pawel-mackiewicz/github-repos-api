@@ -160,7 +160,7 @@ class IntegrationTests {
                 invalidTestUsername);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-//        assertThat(response.getBody()).contains("\"status\": 404,");
-//        assertThat(response.getBody()).contains("\"message\": \"User not found\"");
+        assertThat(response.getBody()).contains("\"status\":404");
+        assertThat(response.getBody()).contains("\"message\":\"user not found");
     }
 }
