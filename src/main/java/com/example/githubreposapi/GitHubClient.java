@@ -17,6 +17,10 @@ import java.util.List;
 @Slf4j
 public class GitHubClient {
 
+    public static final String ERROR_USER_NOT_FOUND = "user not found";
+    public static final String ERROR_UNABLE_TO_FETCH_REPOS = "unable to fetch repositories at this time";
+    public static final String ERROR_UNABLE_TO_FETCH_BRANCHES = "unable to fetch branches at this time";
+
     private final RestClient gitHubClient;
 
     public @Nonnull List<GitHubRepository> getRepositoriesForUser(String username) {
@@ -33,9 +37,9 @@ public class GitHubClient {
                     .retrieve()
                     .body(GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
-            throw new GitHubClientException(HttpStatus.NOT_FOUND, "user not found");
+            throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
         } catch (HttpServerErrorException ex) {
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, "unable to fetch repositories at this time");
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_REPOS);
         }
     }
 
@@ -53,7 +57,7 @@ public class GitHubClient {
                     .retrieve()
                     .body(GitHubBranch[].class);
         } catch (HttpServerErrorException ex) {
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, "unable to fetch branches at this time");
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_BRANCHES);
         }
     }
 }
