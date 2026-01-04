@@ -22,6 +22,7 @@ public class GitHubClient {
     private static final String ERROR_UNABLE_TO_FETCH_REPOS = "unable to fetch repositories at this time";
     private static final String ERROR_UNABLE_TO_FETCH_BRANCHES = "unable to fetch branches at this time";
     private static final String ERROR_RATE_LIMIT = "rate limit exceeded";
+    private static final String ERROR_SERVER_TIMEOUT = "upstream service timeout";
 
     private final RestClient gitHubClient;
 
@@ -66,6 +67,12 @@ public class GitHubClient {
         } catch (HttpClientErrorException.TooManyRequests ex) {
             log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
             throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode().equals(HttpStatus.REQUEST_TIMEOUT)) {
+                log.warn("GitHub upstream service timeout: {}", ex.getMessage());
+                throw new GitHubClientException(HttpStatus.GATEWAY_TIMEOUT, ERROR_SERVER_TIMEOUT);
+            }
+            throw ex;
         }
     }
 }

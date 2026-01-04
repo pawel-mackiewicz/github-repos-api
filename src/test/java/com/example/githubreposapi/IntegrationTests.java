@@ -233,6 +233,28 @@ class IntegrationTests {
     }
 
     @Test
+    void shouldReturn504WhenUpstreamServiceTimesOut() {
+        // Given
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(408)));
+
+        // When
+        ResponseEntity<ErrorResponse> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                ErrorResponse.class,
+                TEST_USERNAME
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(504);
+        assertThat(response.getBody().message())
+                .isEqualTo("upstream service timeout");
+    }
+
+    @Test
     void shouldIncludeRepositoriesWithoutBranches() {
         // Given
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
