@@ -175,5 +175,33 @@ class IntegrationTests {
         assertThat(response.getBody()).isEqualTo("[]");
     }
 
+    @Test
+    void should_return_error_when_500_from_gh_server() {
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                      "message": "Internal Error",
+                                      "status": "500"
+                                    }
+                                ]
+                                """)));
+
+
+        ResponseEntity<ErrorResponse> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                ErrorResponse.class,
+                TEST_USERNAME
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().message())
+                .isEqualTo("unable to fetch repositories at this time");
+        assertThat(response.getBody().status()).isEqualTo(502);
+    }
+
     // not sure what should be returned if given repo is without branches. cant get response from gh - cache issue i think.
 }
