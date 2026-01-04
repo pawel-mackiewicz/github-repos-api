@@ -47,9 +47,13 @@ public class GitHubClient {
     }
 
     private @Nullable GitHubBranch[] fetchBranchesForRepo(GitHubRepository repo) {
-        return gitHubClient.get()
-                .uri("/repos/{owner}/{repo}/branches", repo.owner().login(), repo.name())
-                .retrieve()
-                .body(GitHubBranch[].class);
+        try {
+            return gitHubClient.get()
+                    .uri("/repos/{owner}/{repo}/branches", repo.owner().login(), repo.name())
+                    .retrieve()
+                    .body(GitHubBranch[].class);
+        } catch (HttpServerErrorException ex) {
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, "unable to fetch branches at this time");
+        }
     }
 }
