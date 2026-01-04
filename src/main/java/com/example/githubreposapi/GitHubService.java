@@ -1,11 +1,13 @@
 package com.example.githubreposapi;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GitHubService {
@@ -13,8 +15,10 @@ public class GitHubService {
     private final GitHubClient client;
 
     public @NonNull List<Repository> getUserRepositories(String username) {
+        log.info("Fetching repositories for user: {}", username);
         var ghRepos = client.getRepositoriesForUser(username);
         var filteredGHRepos = filterForkedRepositories(ghRepos);
+        log.info("Found {} repositories for user: {}", filteredGHRepos.size(), username);
         return fetchBranchesAndBuildRepositories(filteredGHRepos);
     }
 
