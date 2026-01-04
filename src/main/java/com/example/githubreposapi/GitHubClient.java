@@ -55,18 +55,17 @@ public class GitHubClient {
                     .uri(uri)
                     .retrieve()
                     .body(responseType);
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw ex; // let NotFound propagate to be handled by caller
         } catch (HttpClientErrorException.TooManyRequests ex) {
             log.warn("GitHub rate limit exceeded: {}", ex.getMessage());
             throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
-        } catch (HttpClientErrorException ex) {
-            if (ex.getStatusCode().equals(HttpStatus.REQUEST_TIMEOUT)) {
-                log.warn("GitHub upstream service timeout: {}", ex.getMessage());
-                throw new GitHubClientException(HttpStatus.GATEWAY_TIMEOUT, ERROR_SERVER_TIMEOUT);
-            }
-            throw ex; // this will be catched below
         } catch (HttpStatusCodeException ex) {
-            log.warn("GitHub server error: {}", ex.getMessage(), ex);
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH);
+            String errorMessage = ex.getStatusCode().equals(HttpStatus.REQUEST_TIMEOUT)
+                    ? ERROR_SERVER_TIMEOUT
+                    : ERROR_UNABLE_TO_FETCH;
+            log.warn("GitHub error ({}): {}", ex.getStatusCode(), ex.getMessage());
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, errorMessage);
         }
     }
 }

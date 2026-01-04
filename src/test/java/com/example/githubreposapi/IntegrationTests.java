@@ -302,7 +302,7 @@ class IntegrationTests {
     }
 
     @Test
-    void shouldReturn504WhenUpstreamServiceTimesOut() {
+    void shouldReturn502WhenUpstreamServiceTimesOut() {
         // Given
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
@@ -316,9 +316,9 @@ class IntegrationTests {
         );
 
         // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().status()).isEqualTo(504);
+        assertThat(response.getBody().status()).isEqualTo(502);
         assertThat(response.getBody().message())
                 .isEqualTo("upstream service timeout");
     }

@@ -36,8 +36,7 @@ Returns non-forked repositories with branches and commit SHAs.
 **Errors:**
 - `404` - User not found
 - `429` - Rate limit exceeded
-- `502` - Unable to fetch from upstream
-- `504` - Upstream service timeout
+- `502` - Unable to fetch from upstream (includes timeouts)
 
 ## Run
 
