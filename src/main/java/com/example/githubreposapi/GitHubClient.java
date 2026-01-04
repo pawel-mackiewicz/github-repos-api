@@ -1,5 +1,6 @@
 package com.example.githubreposapi;
 
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
@@ -15,7 +16,7 @@ public class GitHubClient {
 
     private final RestClient gitHubClient;
 
-    public @Nullable List<GitHubRepository> getRepositoriesForUser(String username) {
+    public @Nonnull List<GitHubRepository> getRepositoriesForUser(String username) {
         GitHubRepository[] repos = fetchUserRepos(username);
 
         assert repos != null;
