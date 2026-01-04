@@ -9,7 +9,7 @@ public class GitHubClientException extends RuntimeException {
     private final HttpStatus status;
 
     public GitHubClientException(HttpStatus httpStatus, String errMessage) {
-        status = httpStatus;
         super(errMessage);
+        status = httpStatus;
     }
 }
