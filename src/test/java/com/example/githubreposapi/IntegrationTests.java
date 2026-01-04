@@ -143,14 +143,15 @@ class IntegrationTests {
                                 ]
                                 """)));
 
-        ResponseEntity<String> response = restTemplate.getForEntity(
+        ResponseEntity<ErrorResponse> response = restTemplate.getForEntity(
                 "/repos/{username}",
-                String.class,
+                ErrorResponse.class,
                 INVALID_TEST_USERNAME);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).contains("\"status\":404");
-        assertThat(response.getBody()).contains("\"message\":\"user not found");
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(404);
+        assertThat(response.getBody().message()).isEqualTo("user not found");
     }
 
     @Test
