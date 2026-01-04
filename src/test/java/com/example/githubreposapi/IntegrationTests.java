@@ -202,4 +202,78 @@ class IntegrationTests {
                 .isEqualTo("unable to fetch repositories at this time");
         assertThat(response.getBody().status()).isEqualTo(502);
     }
+
+    @Test
+    void shouldReturnValidResponseWhenRepositoryHasNoBranches() {
+        // Given
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "repo-with-branches",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    },
+                                    {
+                                        "name": "empty-repo",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    },
+                                    {
+                                        "name": "forked-repo",
+                                        "fork": true,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/repo-with-branches/branches"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "main",
+                                        "commit": {
+                                            "sha": "abc123"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/empty-repo/branches"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("[]")));
+
+        // When
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                String.class,
+                TEST_USERNAME);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"repositoryName\":\"repo-with-branches\"")
+                .contains("\"ownerLogin\":\"octocat\"")
+                .contains("\"name\":\"main\"")
+                .contains("\"lastCommitSha\":\"abc123\"")
+                .contains("\"repositoryName\":\"empty-repo\"")
+                .doesNotContain("forked-repo");
+
+        // Verify that fork repository was NOT requested
+        verify(0, getRequestedFor(urlEqualTo("/repos/" + TEST_USERNAME + "/forked-repo/branches")));
+    }
 }
