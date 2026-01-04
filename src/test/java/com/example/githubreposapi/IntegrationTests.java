@@ -24,6 +24,7 @@ class IntegrationTests {
 
     private static final String TEST_USERNAME = "octocat";
     private static final String INVALID_TEST_USERNAME = "invalid_test_username";
+    private static final String EMPTY_TEST_USERNAME = "empty_user";
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -151,4 +152,27 @@ class IntegrationTests {
         assertThat(response.getBody()).contains("\"status\":404");
         assertThat(response.getBody()).contains("\"message\":\"user not found");
     }
+
+    @Test
+    void should_return_empty_response_if_user_without_repos() {
+
+        stubFor(get(urlEqualTo("/users/" + EMPTY_TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                ]
+                                """)));
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                String.class,
+                EMPTY_TEST_USERNAME
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("[]");
+    }
+
+    // not sure what should be returned if given repo is without branches. cant get response from gh - cache issue i think.
 }
