@@ -66,7 +66,7 @@ class IntegrationTests {
                                 ]
                                 """)));
 
-        stubFor(get(urlEqualTo("/repos/octocat/git-consortium/branches"))
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/git-consortium/branches"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
@@ -87,7 +87,7 @@ class IntegrationTests {
                                 ]
                                 """)));
 
-        stubFor(get(urlEqualTo("/repos/octocat/Hello-World/branches"))
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/Hello-World/branches"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
@@ -123,7 +123,7 @@ class IntegrationTests {
                 .doesNotContain("boysenberry-repo-1");
 
         // Verify that fork repository was NOT requested
-        verify(0, getRequestedFor(urlEqualTo("/repos/octocat/boysenberry-repo-1/branches")));
+        verify(0, getRequestedFor(urlEqualTo("/repos/" + TEST_USERNAME + "/boysenberry-repo-1/branches")));
     }
 
     @Test
