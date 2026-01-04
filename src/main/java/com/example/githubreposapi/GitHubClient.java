@@ -38,6 +38,7 @@ public class GitHubClient {
         } catch (HttpClientErrorException.NotFound ex) {
             throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
         } catch (HttpServerErrorException ex) {
+            log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_REPOS, ex);
             throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_REPOS);
         }
     }
@@ -54,6 +55,7 @@ public class GitHubClient {
                     .retrieve()
                     .body(GitHubBranch[].class);
         } catch (HttpServerErrorException ex) {
+            log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_BRANCHES, ex);
             throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_BRANCHES);
         }
     }
