@@ -42,12 +42,10 @@ public class GitHubService {
     }
 
     private @NonNull List<Branch> mapGitHubBranches(List<GitHubBranch> ghBranches) {
-        List<Branch> branches = new LinkedList<>();
-        for (GitHubBranch ghBranch : ghBranches) {
-            var branchName = ghBranch.name();
-            var sha = ghBranch.commit().sha();
-            branches.add(new Branch(branchName,sha));
-        }
-        return branches;
+        return ghBranches.stream()
+                .map(branch -> new Branch(
+                        branch.name(),
+                        branch.commit().sha()))
+                .toList();
     }
 }
