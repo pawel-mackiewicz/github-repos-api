@@ -18,9 +18,11 @@ import java.util.List;
 @Slf4j
 public class GitHubClient {
 
-    public static final String ERROR_USER_NOT_FOUND = "user not found";
-    public static final String ERROR_UNABLE_TO_FETCH_REPOS = "unable to fetch repositories at this time";
-    public static final String ERROR_UNABLE_TO_FETCH_BRANCHES = "unable to fetch branches at this time";
+    private static final String ERROR_USER_NOT_FOUND = "user not found";
+    private static final String ERROR_UNABLE_TO_FETCH_REPOS = "unable to fetch repositories at this time";
+    private static final String ERROR_UNABLE_TO_FETCH_BRANCHES = "unable to fetch branches at this time";
+    private static final String ERROR_RATE_LIMIT = "rate limit exceeded";
+
 
     private final RestClient gitHubClient;
 
@@ -37,6 +39,9 @@ public class GitHubClient {
                     .body(GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
             throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
+        } catch (HttpClientErrorException.TooManyRequests ex) {
+            log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
+            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
         } catch (HttpServerErrorException ex) {
             log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_REPOS, ex);
             throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_REPOS);
@@ -54,6 +59,9 @@ public class GitHubClient {
                     .uri("/repos/{owner}/{repo}/branches", repo.owner().login(), repo.name())
                     .retrieve()
                     .body(GitHubBranch[].class);
+        } catch (HttpClientErrorException.TooManyRequests ex) {
+            log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
+            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
         } catch (HttpServerErrorException ex) {
             log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_BRANCHES, ex);
             throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_BRANCHES);

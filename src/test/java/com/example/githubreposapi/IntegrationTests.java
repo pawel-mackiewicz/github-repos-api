@@ -204,6 +204,35 @@ class IntegrationTests {
     }
 
     @Test
+    void shouldReturn429WhenUpstreamRateLimitExceeded() {
+        // Given
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(429)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "message": "API rate limit exceeded",
+                                  "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+                                }
+                                """)));
+
+        // When
+        ResponseEntity<ErrorResponse> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                ErrorResponse.class,
+                TEST_USERNAME
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(429);
+        assertThat(response.getBody().message())
+                .isEqualTo("rate limit exceeded");
+    }
+
+    @Test
     void shouldIncludeRepositoriesWithoutBranches() {
         // Given
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
