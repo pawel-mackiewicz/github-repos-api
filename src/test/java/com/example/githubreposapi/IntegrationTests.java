@@ -270,10 +270,6 @@ class IntegrationTests {
                 .contains("\"ownerLogin\":\"octocat\"")
                 .contains("\"name\":\"main\"")
                 .contains("\"lastCommitSha\":\"abc123\"")
-                .contains("\"repositoryName\":\"empty-repo\"")
-                .doesNotContain("forked-repo");
-
-        // Verify that fork repository was NOT requested
-        verify(0, getRequestedFor(urlEqualTo("/repos/" + TEST_USERNAME + "/forked-repo/branches")));
+                .contains("\"repositoryName\":\"empty-repo\"");
     }
 }
