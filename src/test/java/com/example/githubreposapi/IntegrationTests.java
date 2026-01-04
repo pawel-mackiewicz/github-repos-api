@@ -35,7 +35,7 @@ class IntegrationTests {
     }
 
     @Test
-    void shouldReturnUserRepositoriesWithoutForks() {
+    void shouldExcludeForkedRepositories() {
 
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
@@ -128,7 +128,7 @@ class IntegrationTests {
     }
 
     @Test
-    void endpoint_should_return_404_for_invalid_username() {
+    void shouldReturn404WhenUserNotFound() {
 
         stubFor(get(urlEqualTo("/users/" + INVALID_TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
@@ -155,7 +155,7 @@ class IntegrationTests {
     }
 
     @Test
-    void should_return_empty_response_if_user_without_repos() {
+    void shouldReturnEmptyListWhenUserHasNoRepositories() {
 
         stubFor(get(urlEqualTo("/users/" + EMPTY_TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
@@ -176,7 +176,7 @@ class IntegrationTests {
     }
 
     @Test
-    void should_return_502_when_500_from_gh_server() {
+    void shouldReturn502WhenUpstreamServiceFails() {
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
                         .withStatus(500)
@@ -204,7 +204,7 @@ class IntegrationTests {
     }
 
     @Test
-    void shouldReturnValidResponseWhenRepositoryHasNoBranches() {
+    void shouldIncludeRepositoriesWithoutBranches() {
         // Given
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
