@@ -10,6 +10,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -25,9 +26,7 @@ public class GitHubClient {
 
     public @Nonnull List<GitHubRepository> getRepositoriesForUser(String username) {
         GitHubRepository[] repos = fetchUserRepos(username);
-
-        assert repos != null;
-        return List.of(repos);
+        return repos != null ? List.of(repos) : Collections.emptyList();
     }
 
     private @Nullable GitHubRepository[] fetchUserRepos(String username) {
@@ -45,9 +44,7 @@ public class GitHubClient {
 
     public @Nonnull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
         GitHubBranch[] branches = fetchBranchesForRepo(repo);
-
-        assert branches != null;
-        return List.of(branches);
+        return branches != null ? List.of(branches) : Collections.emptyList();
     }
 
     private @Nullable GitHubBranch[] fetchBranchesForRepo(GitHubRepository repo) {
