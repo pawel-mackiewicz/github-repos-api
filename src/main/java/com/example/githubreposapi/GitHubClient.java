@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -33,6 +34,8 @@ public class GitHubClient {
                     .body(GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
             throw new GitHubClientException(HttpStatus.NOT_FOUND, "user not found");
+        } catch (HttpServerErrorException ex) {
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, "unable to fetch repositories at this time");
         }
     }
 
