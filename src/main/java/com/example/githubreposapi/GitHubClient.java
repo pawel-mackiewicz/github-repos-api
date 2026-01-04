@@ -40,6 +40,7 @@ public class GitHubClient {
             var uri = String.format("/users/%s/repos", username);
             return getFromGitHubApi(uri, GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
+            log.info("User {} not found on GitHub server", username);
             throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
         }
     }
