@@ -23,7 +23,6 @@ public class GitHubClient {
     private static final String ERROR_UNABLE_TO_FETCH_BRANCHES = "unable to fetch branches at this time";
     private static final String ERROR_RATE_LIMIT = "rate limit exceeded";
 
-
     private final RestClient gitHubClient;
 
     public @Nonnull List<GitHubRepository> getRepositoriesForUser(String username) {
@@ -31,40 +30,42 @@ public class GitHubClient {
         return repos != null ? List.of(repos) : Collections.emptyList();
     }
 
+    public @Nonnull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
+        GitHubBranch[] branches = fetchBranchesForRepo(repo);
+        return branches != null ? List.of(branches) : Collections.emptyList();
+    }
+
     private @Nullable GitHubRepository[] fetchUserRepos(String username) {
         try {
-            return gitHubClient.get()
-                    .uri("/users/{username}/repos", username)
-                    .retrieve()
-                    .body(GitHubRepository[].class);
+            var uri = String.format("/users/%s/repos", username);
+            return getFromGitHubApi(uri, GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
             throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
-        } catch (HttpClientErrorException.TooManyRequests ex) {
-            log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
-            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
         } catch (HttpServerErrorException ex) {
             log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_REPOS, ex);
             throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_REPOS);
         }
     }
 
-    public @Nonnull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
-        GitHubBranch[] branches = fetchBranchesForRepo(repo);
-        return branches != null ? List.of(branches) : Collections.emptyList();
-    }
-
     private @Nullable GitHubBranch[] fetchBranchesForRepo(GitHubRepository repo) {
         try {
-            return gitHubClient.get()
-                    .uri("/repos/{owner}/{repo}/branches", repo.owner().login(), repo.name())
-                    .retrieve()
-                    .body(GitHubBranch[].class);
-        } catch (HttpClientErrorException.TooManyRequests ex) {
-            log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
-            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
+            var uri = String.format("/repos/%s/%s/branches", repo.owner().login(), repo.name());
+            return getFromGitHubApi(uri, GitHubBranch[].class);
         } catch (HttpServerErrorException ex) {
             log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_BRANCHES, ex);
             throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_BRANCHES);
+        }
+    }
+
+    private <T> T getFromGitHubApi(String uri, Class<T> responseType) {
+        try {
+            return gitHubClient.get()
+                    .uri(uri)
+                    .retrieve()
+                    .body(responseType);
+        } catch (HttpClientErrorException.TooManyRequests ex) {
+            log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
+            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
         }
     }
 }
