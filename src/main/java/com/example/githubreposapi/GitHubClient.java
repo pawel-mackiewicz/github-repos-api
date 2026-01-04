@@ -4,7 +4,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -24,10 +26,14 @@ public class GitHubClient {
     }
 
     private @Nullable GitHubRepository[] fetchUserRepos(String username) {
-        return gitHubClient.get()
-                .uri("/users/{username}/repos", username)
-                .retrieve()
-                .body(GitHubRepository[].class);
+        try {
+            return gitHubClient.get()
+                    .uri("/users/{username}/repos", username)
+                    .retrieve()
+                    .body(GitHubRepository[].class);
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new GitHubClientException(HttpStatus.NOT_FOUND, "user not found");
+        }
     }
 
     public @Nonnull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {

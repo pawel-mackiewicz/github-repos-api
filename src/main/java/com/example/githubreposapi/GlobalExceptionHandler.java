@@ -3,16 +3,15 @@ package com.example.githubreposapi;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(HttpClientErrorException.NotFound.class)
-    public ResponseEntity<ErrorResponse> handleNotFound() {
-        var error = new ErrorResponse("user not found", 404);
-        return ResponseEntity.status(404).body(error);
+    @ExceptionHandler(GitHubClientException.class)
+    public ResponseEntity<ErrorResponse> handleGitHubClientExceptions( GitHubClientException ex) {
+        var res = new ErrorResponse(ex.getMessage(), ex.getStatus().value());
+        return ResponseEntity.status(ex.getStatus()).body(res);
     }
 
     @ExceptionHandler(HttpServerErrorException.InternalServerError.class)
