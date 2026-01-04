@@ -199,7 +199,7 @@ class IntegrationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().message())
-                .isEqualTo("unable to fetch repositories at this time");
+                .isEqualTo("unable to fetch from upstream");
         assertThat(response.getBody().status()).isEqualTo(502);
     }
 

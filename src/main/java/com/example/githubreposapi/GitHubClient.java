@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
 import java.util.Collections;
@@ -19,15 +19,14 @@ import java.util.List;
 public class GitHubClient {
 
     private static final String ERROR_USER_NOT_FOUND = "user not found";
-    private static final String ERROR_UNABLE_TO_FETCH_REPOS = "unable to fetch repositories at this time";
-    private static final String ERROR_UNABLE_TO_FETCH_BRANCHES = "unable to fetch branches at this time";
     private static final String ERROR_RATE_LIMIT = "rate limit exceeded";
     private static final String ERROR_SERVER_TIMEOUT = "upstream service timeout";
+    private static final String ERROR_UNABLE_TO_FETCH = "unable to fetch from upstream";
 
     private final RestClient gitHubClient;
 
     public @Nonnull List<GitHubRepository> getRepositoriesForUser(String username) {
-        GitHubRepository[] repos = fetchUserRepos(username);
+        GitHubRepository[] repos = fetchReposForUser(username);
         return repos != null ? List.of(repos) : Collections.emptyList();
     }
 
@@ -36,26 +35,18 @@ public class GitHubClient {
         return branches != null ? List.of(branches) : Collections.emptyList();
     }
 
-    private @Nullable GitHubRepository[] fetchUserRepos(String username) {
+    private @Nullable GitHubRepository[] fetchReposForUser(String username) {
         try {
             var uri = String.format("/users/%s/repos", username);
             return getFromGitHubApi(uri, GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
             throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
-        } catch (HttpServerErrorException ex) {
-            log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_REPOS, ex);
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_REPOS);
         }
     }
 
     private @Nullable GitHubBranch[] fetchBranchesForRepo(GitHubRepository repo) {
-        try {
             var uri = String.format("/repos/%s/%s/branches", repo.owner().login(), repo.name());
             return getFromGitHubApi(uri, GitHubBranch[].class);
-        } catch (HttpServerErrorException ex) {
-            log.error("GitHub server error: {}", ERROR_UNABLE_TO_FETCH_BRANCHES, ex);
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH_BRANCHES);
-        }
     }
 
     private <T> T getFromGitHubApi(String uri, Class<T> responseType) {
@@ -65,14 +56,17 @@ public class GitHubClient {
                     .retrieve()
                     .body(responseType);
         } catch (HttpClientErrorException.TooManyRequests ex) {
-            log.warn("GitHub rate limit exceeded: {}", ERROR_RATE_LIMIT);
+            log.warn("GitHub rate limit exceeded: {}", ex.getMessage());
             throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
         } catch (HttpClientErrorException ex) {
             if (ex.getStatusCode().equals(HttpStatus.REQUEST_TIMEOUT)) {
                 log.warn("GitHub upstream service timeout: {}", ex.getMessage());
                 throw new GitHubClientException(HttpStatus.GATEWAY_TIMEOUT, ERROR_SERVER_TIMEOUT);
             }
-            throw ex;
+            throw ex; // this will be catched below
+        } catch (HttpStatusCodeException ex) {
+            log.warn("GitHub server error: {}", ex.getMessage(), ex);
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH);
         }
     }
 }
