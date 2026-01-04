@@ -8,13 +8,15 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class GitHubRestClientConfig {
 
+    public static final String GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
+
     @Bean
     public RestClient githubRestClient(
             RestClient.Builder builder,
             @Value("${github.api.url:https://api.github.com}") String baseUrl) {
         return builder
                 .baseUrl(baseUrl)
-                .defaultHeader("Accept", "application/vnd.github+json")
+                .defaultHeader("Accept", GITHUB_ACCEPT_HEADER)
                 .build();
     }
 }
