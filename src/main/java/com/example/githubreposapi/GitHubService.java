@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
 import java.util.List;
 
 @Service
@@ -27,18 +26,16 @@ public class GitHubService {
     }
 
     private @NonNull List<Repository> fetchBranchesAndBuildRepositories(List<GitHubRepository> ghRepos) {
-        List<Repository> res = new LinkedList<>();
-        for (GitHubRepository ghRepo : ghRepos) {
-            var name = ghRepo.name();
-            var login = ghRepo.owner().login();
-
-            List<GitHubBranch> ghBranches = client.getBranchesForRepo(ghRepo);
-            List<Branch> branches = mapGitHubBranches(ghBranches);
-
-            var repo = new Repository(name, login, branches);
-            res.add(repo);
-        }
-        return res;
+        return ghRepos.stream()
+                .map(repo -> {
+                    var ghBranches = client.getBranchesForRepo(repo);
+                    var branches = mapGitHubBranches(ghBranches);
+                    return new Repository(
+                            repo.name(),
+                            repo.owner().login(),
+                            branches);
+                })
+                .toList();
     }
 
     private @NonNull List<Branch> mapGitHubBranches(List<GitHubBranch> ghBranches) {
