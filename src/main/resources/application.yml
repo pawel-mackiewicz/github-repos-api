@@ -1,6 +1,8 @@
 spring:
   application:
     name: github-repos-api
+server:
+  port: 8080
 
 github:
   api:
