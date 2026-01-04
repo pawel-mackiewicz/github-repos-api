@@ -176,7 +176,7 @@ class IntegrationTests {
     }
 
     @Test
-    void should_return_error_when_500_from_gh_server() {
+    void should_return_502_when_500_from_gh_server() {
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
                 .willReturn(aResponse()
                         .withStatus(500)
@@ -202,6 +202,4 @@ class IntegrationTests {
                 .isEqualTo("unable to fetch repositories at this time");
         assertThat(response.getBody().status()).isEqualTo(502);
     }
-
-    // not sure what should be returned if given repo is without branches. cant get response from gh - cache issue i think.
 }
