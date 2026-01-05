@@ -32,14 +32,14 @@ public class GitHubService {
         return fetchRepositoriesDetails(filteredGHRepos);
     }
 
-    private @NonNull List<GitHubRepository> filterForkedRepositories(List<GitHubRepository> ghRepos) {
+    private List<GitHubRepository> filterForkedRepositories(List<GitHubRepository> ghRepos) {
         return ghRepos
                 .stream()
                 .filter(repo -> !repo.fork())
                 .toList();
     }
 
-    private @NonNull List<Repository> fetchRepositoriesDetails(List<GitHubRepository> ghRepos) {
+    private List<Repository> fetchRepositoriesDetails(List<GitHubRepository> ghRepos) {
 
         var futures = ghRepos.stream()
                 .map(this::fetchRepositoryDetailsAsync)
@@ -51,10 +51,10 @@ public class GitHubService {
     }
 
     private CompletableFuture<Repository> fetchRepositoryDetailsAsync(GitHubRepository repo) {
-        return CompletableFuture.supplyAsync(() -> fetchRepositoryDetails(repo), EXECUTOR);
+        return CompletableFuture.supplyAsync(() -> fetchRepositoryDetails(repo), executor);
     }
 
-    private @NonNull Repository fetchRepositoryDetails(GitHubRepository repo) {
+    private Repository fetchRepositoryDetails(GitHubRepository repo) {
         var branches = fetchBranches(repo);
         return new Repository(
                 repo.name(),
@@ -62,12 +62,12 @@ public class GitHubService {
                 branches);
     }
 
-    private @NonNull List<Branch> fetchBranches(GitHubRepository repo) {
+    private List<Branch> fetchBranches(GitHubRepository repo) {
         var ghBranches = client.getBranchesForRepo(repo);
         return mapGitHubBranches(ghBranches);
     }
 
-    private @NonNull List<Branch> mapGitHubBranches(List<GitHubBranch> ghBranches) {
+    private  List<Branch> mapGitHubBranches(List<GitHubBranch> ghBranches) {
         return ghBranches.stream()
                 .map(branch -> new Branch(
                         branch.name(),

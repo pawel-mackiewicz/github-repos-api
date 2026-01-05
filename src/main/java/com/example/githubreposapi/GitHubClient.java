@@ -1,9 +1,9 @@
 package com.example.githubreposapi;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -25,12 +25,12 @@ public class GitHubClient {
 
     private final RestClient gitHubClient;
 
-    public @Nonnull List<GitHubRepository> getRepositoriesForUser(String username) {
+    public @NonNull List<GitHubRepository> getRepositoriesForUser(String username) {
         GitHubRepository[] repos = fetchReposForUser(username);
         return repos != null ? List.of(repos) : Collections.emptyList();
     }
 
-    public @Nonnull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
+    public @NonNull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
         GitHubBranch[] branches = fetchBranchesForRepo(repo);
         return branches != null ? List.of(branches) : Collections.emptyList();
     }
@@ -50,7 +50,7 @@ public class GitHubClient {
             return getFromGitHubApi(uri, GitHubBranch[].class);
     }
 
-    private <T> T getFromGitHubApi(String uri, Class<T> responseType) {
+    private @Nullable <T> T getFromGitHubApi(String uri, Class<T> responseType) {
         try {
             return gitHubClient.get()
                     .uri(uri)
