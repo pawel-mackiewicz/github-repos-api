@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.util.StopWatch;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -321,5 +322,94 @@ class IntegrationTests {
         assertThat(response.getBody().status()).isEqualTo(502);
         assertThat(response.getBody().message())
                 .isEqualTo("upstream service timeout");
+    }
+
+    @Test
+    void shouldFetchBranchesInParallel() {
+        // Given
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withFixedDelay(1000)
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "repo-one",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    },
+                                    {
+                                        "name": "repo-two",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    },
+                                    {
+                                        "name": "forked-repo",
+                                        "fork": true,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/repo-one/branches"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withFixedDelay(1000)
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "main",
+                                        "commit": {
+                                            "sha": "sha123"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/repo-two/branches"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withFixedDelay(1000)
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "develop",
+                                        "commit": {
+                                            "sha": "sha456"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        // When
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                String.class,
+                TEST_USERNAME
+        );
+
+        stopWatch.stop();
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Verify total number of requests (1 for repos + 2 for branches)
+        verify(3, getRequestedFor(urlMatching(".*")));
+
+        // Verify time is between 2000ms and 3000ms (parallel execution)
+        long totalTime = stopWatch.getTotalTimeMillis();
+        assertThat(totalTime).isBetween(2000L, 3000L);
     }
 }

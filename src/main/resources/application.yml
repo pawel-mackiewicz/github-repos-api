@@ -1,6 +1,9 @@
 spring:
   application:
     name: github-repos-api
+  threads:
+    virtual:
+      enabled: true
 server:
   port: 8080
 
