@@ -41,7 +41,7 @@ public class GitHubClient {
             return getFromGitHubApi(uri, GitHubRepository[].class);
         } catch (HttpClientErrorException.NotFound ex) {
             log.info("User {} not found on GitHub server", username);
-            throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
+            throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND, ex);
         }
     }
 
@@ -60,13 +60,13 @@ public class GitHubClient {
             throw ex; // let NotFound propagate to be handled by caller
         } catch (HttpClientErrorException.TooManyRequests ex) {
             log.warn("GitHub rate limit exceeded: {}", ex.getMessage());
-            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
+            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT, ex);
         } catch (HttpStatusCodeException ex) {
             String errorMessage = ex.getStatusCode().equals(HttpStatus.REQUEST_TIMEOUT)
                     ? ERROR_SERVER_TIMEOUT
                     : ERROR_UNABLE_TO_FETCH;
             log.warn("GitHub error ({}): {}", ex.getStatusCode(), ex.getMessage());
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, errorMessage);
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, errorMessage, ex);
         }
     }
 }
