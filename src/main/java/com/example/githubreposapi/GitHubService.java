@@ -1,23 +1,28 @@
 package com.example.githubreposapi;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class GitHubService {
 
-    private final static ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
-
+    private final AsyncTaskExecutor executor;
     private final GitHubClient client;
+
+    public GitHubService(
+            @Qualifier("applicationTaskExecutor") AsyncTaskExecutor executor,
+            GitHubClient client
+    ) {
+        this.executor = executor;
+        this.client = client;
+    }
 
     public @NonNull List<Repository> getUserRepositories(String username) {
         log.info("Fetching repositories for user: {}", username);
