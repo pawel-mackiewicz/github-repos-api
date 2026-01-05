@@ -325,6 +325,51 @@ class IntegrationTests {
     }
 
     @Test
+    void shouldReturn502WhenBranchFetchingFails() {
+        // Given
+        stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                [
+                                    {
+                                        "name": "test-repo",
+                                        "fork": false,
+                                        "owner": {
+                                            "login": "octocat"
+                                        }
+                                    }
+                                ]
+                                """)));
+
+        stubFor(get(urlEqualTo("/repos/" + TEST_USERNAME + "/test-repo/branches"))
+                .willReturn(aResponse()
+                        .withStatus(500)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "message": "Internal Server Error",
+                                  "status": "500"
+                                }
+                                """)));
+
+        // When
+        ResponseEntity<ErrorResponse> response = restTemplate.getForEntity(
+                "/repos/{username}",
+                ErrorResponse.class,
+                TEST_USERNAME
+        );
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(502);
+        assertThat(response.getBody().message())
+                .isEqualTo("unable to fetch from upstream");
+    }
+
+    @Test
     void shouldFetchBranchesInParallel() {
         // Given
         stubFor(get(urlEqualTo("/users/" + TEST_USERNAME + "/repos"))

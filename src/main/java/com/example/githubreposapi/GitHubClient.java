@@ -2,20 +2,19 @@ package com.example.githubreposapi;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
-import java.util.Collections;
+import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class GitHubClient {
 
     private static final String ERROR_USER_NOT_FOUND = "user not found";
@@ -25,48 +24,36 @@ public class GitHubClient {
 
     private final RestClient gitHubClient;
 
-    public @NonNull List<GitHubRepository> getRepositoriesForUser(String username) {
-        GitHubRepository[] repos = fetchReposForUser(username);
-        return repos != null ? List.of(repos) : Collections.emptyList();
+    public List<GitHubRepository> getRepositoriesForUser(String username) {
+        return gitHubClient.get()
+                .uri("/users/{username}/repos", username)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (_, response) -> {
+                    if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
+                        throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND);
+                    }
+                    handleResponseError(response);
+                })
+                .body(new ParameterizedTypeReference<>() {});
     }
 
-    public @NonNull List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
-        GitHubBranch[] branches = fetchBranchesForRepo(repo);
-        return branches != null ? List.of(branches) : Collections.emptyList();
+    public List<GitHubBranch> getBranchesForRepo(GitHubRepository repo) {
+        return gitHubClient.get()
+                .uri("/repos/{owner}/{repo}/branches", repo.owner().login(), repo.name())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (_, response) ->
+                        handleResponseError(response))
+                .body(new ParameterizedTypeReference<>() {});
     }
 
-    private @Nullable GitHubRepository[] fetchReposForUser(String username) {
-        try {
-            var uri = String.format("/users/%s/repos", username);
-            return getFromGitHubApi(uri, GitHubRepository[].class);
-        } catch (HttpClientErrorException.NotFound ex) {
-            log.info("User {} not found on GitHub server", username);
-            throw new GitHubClientException(HttpStatus.NOT_FOUND, ERROR_USER_NOT_FOUND, ex);
+    private void handleResponseError(ClientHttpResponse response) throws IOException {
+        if (response.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT);
         }
-    }
-
-    private @Nullable GitHubBranch[] fetchBranchesForRepo(GitHubRepository repo) {
-            var uri = String.format("/repos/%s/%s/branches", repo.owner().login(), repo.name());
-            return getFromGitHubApi(uri, GitHubBranch[].class);
-    }
-
-    private @Nullable <T> T getFromGitHubApi(String uri, Class<T> responseType) {
-        try {
-            return gitHubClient.get()
-                    .uri(uri)
-                    .retrieve()
-                    .body(responseType);
-        } catch (HttpClientErrorException.NotFound ex) {
-            throw ex; // let NotFound propagate to be handled by caller
-        } catch (HttpClientErrorException.TooManyRequests ex) {
-            log.warn("GitHub rate limit exceeded: {}", ex.getMessage());
-            throw new GitHubClientException(HttpStatus.TOO_MANY_REQUESTS, ERROR_RATE_LIMIT, ex);
-        } catch (HttpStatusCodeException ex) {
-            String errorMessage = ex.getStatusCode().equals(HttpStatus.REQUEST_TIMEOUT)
-                    ? ERROR_SERVER_TIMEOUT
-                    : ERROR_UNABLE_TO_FETCH;
-            log.warn("GitHub error ({}): {}", ex.getStatusCode(), ex.getMessage());
-            throw new GitHubClientException(HttpStatus.BAD_GATEWAY, errorMessage, ex);
+        if (response.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
+            throw new GitHubClientException(HttpStatus.BAD_GATEWAY,ERROR_SERVER_TIMEOUT);
         }
+        //fallback
+        throw new GitHubClientException(HttpStatus.BAD_GATEWAY, ERROR_UNABLE_TO_FETCH);
     }
 }
