@@ -21,12 +21,12 @@ Returns non-forked repositories with branches and commit SHAs.
 ```json
 [
   {
-    "name": "repo-name",
-    "owner": "username",
+    "repositoryName": "repo-name",
+    "ownerLogin": "username",
     "branches": [
       {
         "name": "main",
-        "sha": "abc123..."
+        "lastCommitSha": "abc123..."
       }
     ]
   }
